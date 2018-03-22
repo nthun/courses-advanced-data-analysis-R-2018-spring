@@ -1,0 +1,178 @@
+---
+title: "Fitting linear mixed-effects model using lme4"
+output: html_notebook
+---
+
+# Aim
+To demostrate how to use lme4::lmer() function to fit linear mixed-effects models, and to compare these models. I also wanted to visualize the difference between the different models, and show how to do residual diagnostics automatically and manually. Also, I show a way to create (almost) publication-ready model comparison table.
+
+```{r libraries, include=FALSE}
+# lme4 tutorial
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(broom)
+library(ggfortify)
+library(stargazer)
+library(gridExtra)
+```
+
+We are going to use the built in sleepstudy dataset. It contains reaction times during 10 days of 3-hour-long sleep deprivation. It is a within-subject design, so in theory, it makes sense to use LMM.
+
+```{r}
+# Create the data for plotting different random structures
+subject_is <- 
+    sleepstudy %>% 
+    group_by(Subject) %>% 
+    do(lm = lm(Reaction ~ Days, data = .) %>% tidy()) %>% 
+    unnest() %>% 
+    select(Subject, term, estimate) %>% 
+    mutate(term = case_when(term == "(Intercept)" ~ "intercept",
+                            term == "Days" ~ "slope",
+                            TRUE ~ NA_character_)) %>% 
+    spread(term, estimate) %>% 
+    mutate(fixed_slope = mean(slope),
+           fixed_intercept = mean(intercept))
+```
+
+# Step 1. Check the data like the observations were independent, i.e. use simple linear regression
+```{r, fig.align='center'}
+# Create a plot that shows whis logic
+ggplot(data = sleepstudy) +
+    aes(x = Days, y = Reaction) +
+    geom_point() +
+    geom_smooth(method = "lm")
+
+# Fit liear regression
+sleep.lm <- lm(Reaction ~ Days, data = sleepstudy)
+# Check predictor statistics
+summary(sleep.lm)
+tidy(sleep.lm)
+# Check model fit statistics
+glance(sleep.lm)
+```
+
+Alternatively, we can plot the same regression on each participant, to see how far the fixed intercepts and slopes are from the data points.
+
+```{r, fig.width=9, fig.height=8}
+# Plot the fixed intercept and slope model == linear regression
+sleepstudy %>% 
+    left_join(subject_is) %>% 
+    ggplot() +
+        aes(x = Days, y = Reaction) +
+        geom_abline(aes(intercept = fixed_intercept, slope = fixed_slope), color = "blue", size = 1.2) +
+        geom_point() +
+        facet_wrap(~Subject)
+```
+
+Let's also make a set of residual diagnostic plots.
+
+```{r, fig.height=8, fig.width=9}
+# Residual diagnostic plots
+autoplot(sleep.lm, which = 1:6)
+```
+
+# Step 2. Check if the mixed-model makes more sense
+First try a random intercept model. 
+
+The lme4 syntax is very similar to the lm syntax. You can add random terms with + (slope|intercept). If you set the slope to 1, it means it remains fixed.
+
+For a repeated measures design, the random intercept should be the subject (id)
+Let's check if the random intercept (but not slope) model is a better fit than the fixed$
+
+```{r, fig.width=9, fig.height=8}
+# I want to show the fixed slope, random intercept model
+# To do this, I fit an lm to each subject individually (see beginning of script). To get the fixed intercept, I take the average intercept in all models.
+
+# Plot the random intercept model
+sleepstudy %>% 
+    left_join(subject_is) %>% 
+    ggplot() +
+        aes(x = Days, y = Reaction) +
+        geom_abline(aes(intercept = intercept, slope = fixed_slope), color = "blue", size = 1.2) +
+        geom_point() +
+        facet_wrap(~Subject)
+
+# Fit the random intercept model
+sleep.i <- lmer(Reaction ~ Days + (1|Subject), data = sleepstudy)
+
+summary(sleep.i)
+glance(sleep.i)
+
+```
+We can see that the model looks better, but the predicted values are sometimes quite off, e.g. with particpant 308 and 335.
+
+## Let's compare the random intercept model with the linear regression model.
+The one with the random intercept has a much better fit, although it is more compex.
+lme4 by default uses REML for fitting the model, but when we are comparing models, it automatically refits the models in ML, so they are comparable.
+```{r}
+# Compare random intercept model to fixed intercept model (linear regression)
+anova(sleep.i, sleep.lm)
+```
+
+# Let's check if we need random slope too, or random intercept is enough
+It turns out that the random intercept and slope model is the better fit, so it should be kept as final.
+```{r, fig.width=9, fig.height=8}
+# First, visualize how the data would look like with random intercept and slope. With ggplot, it is easy, beacause the geom_smooth(method = "lm") function does this automatically, we don't have to use our data from the earlier chunk.
+ggplot(sleepstudy) +
+    aes(x = Days, y = Reaction) +
+    geom_point() +
+    geom_smooth(method = "lm", se = FALSE) +
+    facet_wrap(~Subject)
+# Fit random intercept and slope model
+sleep.is <- lmer(Reaction ~ Days + (Days|Subject), data = sleepstudy)
+
+summary(sleep.is)
+glance(sleep.is)
+# Compare model to random intercept model
+anova(sleep.i, sleep.is)
+```
+
+# Residual diadnostics of the linear mixed-model
+Sadly, there autoplot is not capable to make the residual diagnostic plots, but we can do it easily using the results of the augment() function.
+Despite the three outlier data points, the residuals look rather normal. 
+We should accept this model as the final one.
+
+```{r}
+# Get the residuals using the broom::augment() function
+diag_data <- augment(sleep.is, sleepstudy) %>% 
+    mutate(.stdresid = scale(.resid) %>% as.numeric())
+
+# Plot the data together in one object
+plot_1 <- ggplot(diag_data) +
+    aes(x = .fitted, y = .resid) +
+    geom_point() +
+    geom_smooth()
+
+plot_2 <- ggplot(diag_data) +
+    aes(x = .fitted, y = sqrt(abs(.stdresid))) +
+    geom_point() +
+    geom_smooth()
+
+plot_3 <- ggplot(diag_data) +
+    aes(sample = .stdresid) +
+    geom_qq_line(color = "blue") +
+    geom_qq()
+
+plot_4 <- ggplot(diag_data) +
+    aes(x = .stdresid) +
+    geom_histogram(bins = 30)
+
+gridExtra::grid.arrange(plot_1, plot_3, plot_2, plot_4)
+
+```
+
+# Print model comparison using stargazer
+We need to refit the mixed-models using the lme4 version of lmer, as stargazer cannot read the lmerTest::lmer() object.
+
+```{r, results = "asis"}
+# Refit LMMs in order to show in stargazer
+sleep.i.final <- lme4::lmer(Reaction ~ Days + (1|Subject), data = sleepstudy)
+sleep.is.final <- lme4::lmer(Reaction ~ Days + (Days|Subject), data = sleepstudy)
+
+stargazer(sleep.lm, sleep.i.final, sleep.is.final, type = "html")
+```
+
+
+
+
