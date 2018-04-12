@@ -63,7 +63,7 @@ hs_model_fi <- read_lines("CFA models/fs_model_fi.txt")
 fit2 <- cfa(hs_model_fi, hs_data)
 summary(fit2, fit.measures = TRUE)
 
-hs_model_ort <- read_lines("CFA models/hs_model_orthogonal")
+hs_model_ort <- read_lines("CFA models/hs_model_orthogonal.txt")
 
 fit3 <- cfa(hs_model_ort, hs_data)
 summary(fit3, fit.measures = TRUE)
@@ -81,8 +81,12 @@ fit5 <- cfa(hs_model, hs_data, std.lev = TRUE)
 summary(fit5, fit.measures = TRUE)
 semPaths(fit5, "est")
 
-# You can get just the coefficients
-coef(fit5)
+# You can build 2-level structurese (see file)
+hs_model_2fac <- read_lines("CFA models/fs_model_2fac.txt")
+
+fit6 <- cfa(hs_model_2fac, hs_data, std.lev = TRUE)
+summary(fit6, fit.measures = TRUE)
+semPaths(fit6, "est")
 
 
 
