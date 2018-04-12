@@ -88,7 +88,11 @@ fit6 <- cfa(hs_model_2fac, hs_data, std.lev = TRUE)
 summary(fit6, fit.measures = TRUE)
 semPaths(fit6, "est")
 
+# You can do multi group analysis
 
+fit7 <- cfa(hs_model, data = hs_data, group = "school")
+summary(fit7, fit.measures = TRUE)
+semPaths(fit7, "est")
 
 
 
