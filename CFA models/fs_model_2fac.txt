@@ -4,5 +4,5 @@ textual =~ x4 + x5 + x6
 speed   =~ x7 + x8 + x9
 
 # 2-level structure
-intelligence =~ visual + textual + speed
+mental =~ visual + textual + speed
 

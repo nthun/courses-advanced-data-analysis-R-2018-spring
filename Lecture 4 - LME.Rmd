@@ -12,6 +12,7 @@ library(tidyverse)
 library(lme4)
 library(lmerTest)
 library(broom)
+library(modelr)
 library(ggfortify)
 library(stargazer)
 library(gridExtra)
@@ -129,7 +130,7 @@ anova(sleep.i, sleep.is)
 ```
 
 # Residual diadnostics of the linear mixed-model
-Sadly, there autoplot is not capable to make the residual diagnostic plots, but we can do it easily using the results of the augment() function.
+Sadly, the autoplot is not capable to make the residual diagnostic plots, but we can do it easily using the results of the augment() function.
 Despite the three outlier data points, the residuals look rather normal. 
 We should accept this model as the final one.
 
