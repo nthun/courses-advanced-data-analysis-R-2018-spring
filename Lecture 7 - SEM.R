@@ -99,3 +99,8 @@ semPaths(pd_fit, "std", nCharNodes = 6, edge.label.cex = 1.5, sizeMan = 10, edge
 summary(pd_fit, modindices = TRUE)
 
 modificationindices(pd_fit, sort = TRUE)
+
+
+# The jobs dataset
+jobs <- read_csv("https://raw.githubusercontent.com/nthun/courses-advanced-data-analysis-R-2018-spring/master/datasets/jobs.csv")
+

@@ -2,8 +2,6 @@
 # Check out the hompage: http://lavaan.ugent.be/
 
 install.packages("lavaan")
-
-
 library(tidyverse)
 library(lavaan)
 
