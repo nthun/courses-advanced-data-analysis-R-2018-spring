@@ -95,6 +95,7 @@ semPaths(pd_fit, rotation = 4)
 summary(pd_fit, standardized = TRUE, fit.measures = TRUE)
 semPaths(pd_fit, "std", nCharNodes = 6, edge.label.cex = 1.5, sizeMan = 10, edge.color = "black", shapeMan = "rectangle", rotation = 2)
 
+# Modification indices
+summary(pd_fit, modindices = TRUE)
 
-
-
+modificationindices(pd_fit, sort = TRUE)
