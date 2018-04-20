@@ -66,7 +66,7 @@ summary(fit_exercise, fit.measures = TRUE)
 semPaths(fit_exercise, "std", nCharNodes = 6, edge.label.cex = 1.5, sizeMan = 10, edge.color = "black", shapeMan = "rectangle", rotation = 2)
 
 
-# SEM
+# SEM tutorial from the official lavaan ducumentation http://lavaan.ugent.be/tutorial/index.html
 PoliticalDemocracy %>% as_tibble()
 
 pd_model <- '
@@ -99,8 +99,3 @@ semPaths(pd_fit, "std", nCharNodes = 6, edge.label.cex = 1.5, sizeMan = 10, edge
 summary(pd_fit, modindices = TRUE)
 
 modificationindices(pd_fit, sort = TRUE)
-
-
-# The jobs dataset
-jobs <- read_csv("https://raw.githubusercontent.com/nthun/courses-advanced-data-analysis-R-2018-spring/master/datasets/jobs.csv")
-
